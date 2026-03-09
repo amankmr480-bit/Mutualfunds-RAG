@@ -11,11 +11,18 @@ A Retrieval-Augmented Generation (RAG) chatbot that answers questions about ICIC
 
 ## Streamlit Cloud Deployment
 
-1. Fork/push this repo to your GitHub
-2. Go to [share.streamlit.io](https://share.streamlit.io)
-3. Connect your repo and set **Main file path** to `phase6_chatbot/app.py`
-4. Add secret `GROQ_API_KEY` in Streamlit Cloud dashboard (Settings → Secrets)
-5. Deploy
+1. Push this repo to GitHub (already at [github.com/amankmr480-bit/Mutualfunds-RAG](https://github.com/amankmr480-bit/Mutualfunds-RAG))
+2. Go to [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub
+3. Click **"New app"** → **"Deploy an existing app"**
+4. Select:
+   - **Repository:** `amankmr480-bit/Mutualfunds-RAG`
+   - **Branch:** `main`
+   - **Main file path:** `phase6_chatbot/app.py`
+5. Click **"Advanced settings"** and add secrets (TOML format):
+   ```
+   GROQ_API_KEY = "your-groq-api-key-here"
+   ```
+6. Click **"Deploy"**
 
 ## Data Source
 
