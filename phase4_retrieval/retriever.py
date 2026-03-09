@@ -4,13 +4,13 @@ Includes in-memory fallback (JSON + embeddings) when ChromaDB fails (e.g. on Str
 """
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from phase3_vectorstore.embeddings import embed_query, embed_texts
-from phase3_vectorstore.store import get_chroma_client, load_collection
 from phase4_retrieval.config import (
     COLLECTION_NAME,
     DEFAULT_CHUNKS_PATH,
@@ -24,15 +24,33 @@ logger = logging.getLogger(__name__)
 # Cache for in-memory fallback: (chunks, embeddings)
 _chunks_cache: tuple[list[dict], list[list[float]]] | None = None
 
+# Skip ChromaDB on Streamlit Cloud (SQLite incompatible) - use JSON retrieval only
+_USE_JSON_ONLY = os.environ.get("STREAMLIT_SERVER_HEADLESS", "").lower() in ("true", "1")
 
-def _load_chunks_and_embeddings(chunks_path: str | Path) -> tuple[list[dict], list[list[float]]]:
+
+def _find_chunks_path() -> Path | None:
+    """Find rag_chunks.json using multiple path strategies for Streamlit Cloud."""
+    root_env = os.environ.get("RAG_PROJECT_ROOT")
+    candidates = [
+        DEFAULT_CHUNKS_PATH,
+        Path(root_env) / "phase2_processing" / "output" / "rag_chunks.json" if root_env else None,
+        Path(__file__).resolve().parent.parent / "phase2_processing" / "output" / "rag_chunks.json",
+        Path.cwd() / "phase2_processing" / "output" / "rag_chunks.json",
+    ]
+    for p in candidates:
+        if p and p.exists():
+            return p
+    return None
+
+
+def _load_chunks_and_embeddings(chunks_path: str | Path | None = None) -> tuple[list[dict], list[list[float]]]:
     """Load RAG chunks from JSON and compute embeddings. Cached for reuse."""
     global _chunks_cache
     if _chunks_cache is not None:
         return _chunks_cache
-    path = Path(chunks_path)
-    if not path.exists():
-        raise FileNotFoundError(f"Chunks file not found: {path}")
+    path = Path(chunks_path) if chunks_path else _find_chunks_path()
+    if not path or not path.exists():
+        raise FileNotFoundError(f"Chunks file not found. Tried: {DEFAULT_CHUNKS_PATH}")
     with open(path, encoding="utf-8") as f:
         chunks = json.load(f)
     if not chunks:
@@ -59,7 +77,6 @@ def retrieve_from_json(
         q = query or ""
     if not q.strip():
         return [], []
-    chunks_path = chunks_path or DEFAULT_CHUNKS_PATH
     chunks, chunk_embeddings = _load_chunks_and_embeddings(chunks_path)
     if not chunks:
         return [], []
@@ -105,7 +122,8 @@ def retrieve(
 ) -> tuple[list[dict[str, Any]], list[float]]:
     """
     Run retrieval: preprocess query → embed → vector search → return top-K chunks.
-    Falls back to in-memory JSON retrieval if ChromaDB fails (e.g. Streamlit Cloud).
+    On Streamlit Cloud, uses JSON retrieval only (ChromaDB/SQLite incompatible).
+    Falls back to in-memory JSON retrieval if ChromaDB fails locally.
     Returns (chunks, distances) where each chunk is { "text": str, "metadata": dict }.
     """
     q = preprocess_query(query) if preprocess else (query or "").strip()
@@ -114,7 +132,13 @@ def retrieve(
     if not q.strip():
         return [], []
 
+    # Streamlit Cloud: skip ChromaDB entirely, use JSON retrieval
+    if _USE_JSON_ONLY:
+        return retrieve_from_json(query, top_k=top_k, preprocess=False)
+
     try:
+        from phase3_vectorstore.store import load_collection
+
         query_embedding = embed_query(q)
         persist_dir = Path(persist_dir or DEFAULT_PERSIST_DIR)
         collection = load_collection(persist_directory=persist_dir, collection_name=collection_name)

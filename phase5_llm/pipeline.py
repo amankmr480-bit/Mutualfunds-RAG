@@ -51,14 +51,23 @@ def answer_query(
     try:
         ret = retrieve_context(user_query, top_k=top_k, **retrieve_kwargs)
     except Exception as e:
-        logger.exception("Retrieval failed: %s", e)
-        return {
-            "answer": "Sorry, I couldn't search the fund data. Please try again.",
-            "sources": [],
-            "from_cache": False,
-            "refused_personal": False,
-            "no_data_found": True,
-        }
+        logger.warning("Retrieval failed, trying JSON fallback: %s", e)
+        try:
+            from phase4_retrieval.context import assemble_context
+            from phase4_retrieval.retriever import retrieve_from_json
+
+            chunks, _ = retrieve_from_json(user_query, top_k=top_k)
+            context = assemble_context(chunks)
+            ret = {"chunks": chunks, "context": context, "distances": []}
+        except Exception as e2:
+            logger.exception("JSON fallback also failed: %s", e2)
+            return {
+                "answer": "Sorry, I couldn't search the fund data. Please try again.",
+                "sources": [],
+                "from_cache": False,
+                "refused_personal": False,
+                "no_data_found": True,
+            }
     context = ret.get("context") or ""
     chunks = ret.get("chunks") or []
     if not context.strip():

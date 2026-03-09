@@ -11,10 +11,12 @@ Phase 6: Streamlit chat UI for ICICI Prudential Mutual Fund RAG.
 No personal data stored; personal questions are refused.
 Layout: Header (red) | Chat history (left) | Main chat (center) | Suggested questions (right)
 """
+import os
 from pathlib import Path
 
 # Ensure project root is on path when running from phase6_chatbot dir
 _root = Path(__file__).resolve().parent.parent
+os.environ.setdefault("RAG_PROJECT_ROOT", str(_root))
 if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
