@@ -1,6 +1,6 @@
 """
 Phase 4: Retrieval — embed query, vector search, optional metadata filter, return top-K chunks.
-Includes in-memory fallback (JSON + embeddings) when ChromaDB fails (e.g. on Streamlit Cloud).
+Uses JSON + embeddings in-memory retrieval (primary for cloud deployment; ChromaDB fails on Streamlit/Vercel).
 """
 import json
 import logging
@@ -21,20 +21,22 @@ from phase4_retrieval.preprocess import preprocess_query
 
 logger = logging.getLogger(__name__)
 
-# Cache for in-memory fallback: (chunks, embeddings)
+# Cache for in-memory retrieval: (chunks, embeddings)
 _chunks_cache: tuple[list[dict], list[list[float]]] | None = None
 
-# Skip ChromaDB on Streamlit Cloud (SQLite incompatible) - use JSON retrieval only
-_USE_JSON_ONLY = os.environ.get("STREAMLIT_SERVER_HEADLESS", "").lower() in ("true", "1")
+# Use JSON retrieval when: cloud deployment (USE_CHROMADB not set) or explicitly set
+# ChromaDB/SQLite fails on Streamlit Cloud, Hugging Face Spaces, etc.
+_USE_JSON_ONLY = os.environ.get("USE_CHROMADB", "").lower() not in ("true", "1", "yes")
 
 
 def _find_chunks_path() -> Path | None:
-    """Find rag_chunks.json using multiple path strategies for Streamlit Cloud."""
-    root_env = os.environ.get("RAG_PROJECT_ROOT")
+    """Find rag_chunks.json using multiple path strategies for cloud deployment."""
+    root_env = os.environ.get("RAG_PROJECT_ROOT", "").strip()
+    base = Path(__file__).resolve().parent.parent
     candidates = [
         DEFAULT_CHUNKS_PATH,
         Path(root_env) / "phase2_processing" / "output" / "rag_chunks.json" if root_env else None,
-        Path(__file__).resolve().parent.parent / "phase2_processing" / "output" / "rag_chunks.json",
+        base / "phase2_processing" / "output" / "rag_chunks.json",
         Path.cwd() / "phase2_processing" / "output" / "rag_chunks.json",
     ]
     for p in candidates:
@@ -122,8 +124,7 @@ def retrieve(
 ) -> tuple[list[dict[str, Any]], list[float]]:
     """
     Run retrieval: preprocess query → embed → vector search → return top-K chunks.
-    On Streamlit Cloud, uses JSON retrieval only (ChromaDB/SQLite incompatible).
-    Falls back to in-memory JSON retrieval if ChromaDB fails locally.
+    Default: JSON retrieval (works on Streamlit/Vercel/HF Spaces). Set USE_CHROMADB=true for local ChromaDB.
     Returns (chunks, distances) where each chunk is { "text": str, "metadata": dict }.
     """
     q = preprocess_query(query) if preprocess else (query or "").strip()
@@ -132,7 +133,7 @@ def retrieve(
     if not q.strip():
         return [], []
 
-    # Streamlit Cloud: skip ChromaDB entirely, use JSON retrieval
+    # Default: JSON retrieval (works on all cloud platforms; ChromaDB fails on Streamlit/Vercel)
     if _USE_JSON_ONLY:
         return retrieve_from_json(query, top_k=top_k, preprocess=False)
 
