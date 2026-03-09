@@ -30,7 +30,11 @@ _USE_JSON_ONLY = os.environ.get("USE_CHROMADB", "").lower() not in ("true", "1",
 
 
 def _find_chunks_path() -> Path | None:
-    """Find rag_chunks.json using multiple path strategies for cloud deployment."""
+    """Find rag_chunks.json; bundled path first (works on Streamlit/HF regardless of cwd)."""
+    # 1) Bundled next to this module - always works when package is deployed
+    bundled = Path(__file__).resolve().parent / "data" / "rag_chunks.json"
+    if bundled.exists():
+        return bundled
     root_env = os.environ.get("RAG_PROJECT_ROOT", "").strip()
     base = Path(__file__).resolve().parent.parent
     candidates = [
@@ -38,6 +42,7 @@ def _find_chunks_path() -> Path | None:
         Path(root_env) / "phase2_processing" / "output" / "rag_chunks.json" if root_env else None,
         base / "phase2_processing" / "output" / "rag_chunks.json",
         Path.cwd() / "phase2_processing" / "output" / "rag_chunks.json",
+        Path.cwd() / "phase4_retrieval" / "data" / "rag_chunks.json",
     ]
     for p in candidates:
         if p and p.exists():

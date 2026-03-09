@@ -61,8 +61,10 @@ def answer_query(
             ret = {"chunks": chunks, "context": context, "distances": []}
         except Exception as e2:
             logger.exception("JSON fallback also failed: %s", e2)
+            err_msg = str(e2).strip()[:200]
             return {
-                "answer": "Sorry, I couldn't search the fund data. Please try again.",
+                "answer": "Sorry, I couldn't search the fund data. Please try again."
+                + (f" (Error: {err_msg})" if err_msg else ""),
                 "sources": [],
                 "from_cache": False,
                 "refused_personal": False,
