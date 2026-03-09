@@ -7,6 +7,7 @@ from pathlib import Path
 # Chroma (same as Phase 3)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PERSIST_DIR = PROJECT_ROOT / "phase3_vectorstore" / "chroma_db"
+DEFAULT_CHUNKS_PATH = PROJECT_ROOT / "phase2_processing" / "output" / "rag_chunks.json"
 COLLECTION_NAME = "icici_prudential_funds"
 
 # Retrieval
