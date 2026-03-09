@@ -1,0 +1,31 @@
+# Environment (do not commit API keys)
+.env
+.env.local
+*.env
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+*.egg
+
+# Phase outputs (optional: track or ignore)
+# scraper/output/*.json
+# phase2_processing/output/
+# phase3_vectorstore/chroma_db/
+
+# Phase 7 logs
+phase7_operations/logs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

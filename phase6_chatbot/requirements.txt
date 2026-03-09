@@ -1,0 +1,6 @@
+# Phase 6: Streamlit UI
+streamlit>=1.28.0
+
+# Phase 5 (GROQ) and Phase 4 (retrieval) deps - install if not already
+# pip install groq
+# pip install -r phase3_vectorstore/requirements.txt  # for retrieval

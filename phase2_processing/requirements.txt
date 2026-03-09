@@ -1,0 +1,5 @@
+# Phase 2: Data Processing & Enrichment
+# No required deps for core pipeline (csv, json are stdlib).
+# Optional for Parquet:
+# pandas>=2.0.0
+# pyarrow>=14.0.0

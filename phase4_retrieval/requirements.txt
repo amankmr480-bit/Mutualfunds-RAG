@@ -1,0 +1,4 @@
+# Phase 4: Retrieval Layer
+# Depends on Phase 3 (vector store + embeddings)
+# Install Phase 3 deps first: pip install -r phase3_vectorstore/requirements.txt
+# No additional packages required beyond Phase 3
