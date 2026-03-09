@@ -1,9 +1,13 @@
+# Fix for ChromaDB SQLite on Streamlit Cloud (must be before any chromadb imports)
+__import__("pysqlite3")
+import sys
+sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+
 """
 Phase 6: Streamlit chat UI for ICICI Prudential Mutual Fund RAG.
 No personal data stored; personal questions are refused.
 Layout: Header (red) | Chat history (left) | Main chat (center) | Suggested questions (right)
 """
-import sys
 from pathlib import Path
 
 # Ensure project root is on path when running from phase6_chatbot dir
