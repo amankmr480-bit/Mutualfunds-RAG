@@ -6,9 +6,6 @@
 
 python-dotenv>=1.0.0
 
-# ChromaDB on Streamlit Cloud: requires SQLite >= 3.35.0
-pysqlite3-binary
-
 # Phase 1
 beautifulsoup4>=4.12.0
 playwright>=1.40.0

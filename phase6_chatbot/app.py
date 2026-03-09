@@ -1,7 +1,10 @@
 # Fix for ChromaDB SQLite on Streamlit Cloud (must be before any chromadb imports)
-__import__("pysqlite3")
 import sys
-sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+try:
+    __import__("pysqlite3")
+    sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+except ImportError:
+    pass  # Use system sqlite3 (Python 3.12+ often has sufficient version)
 
 """
 Phase 6: Streamlit chat UI for ICICI Prudential Mutual Fund RAG.
